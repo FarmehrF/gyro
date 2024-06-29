@@ -2,8 +2,8 @@
   <div class="container">
     <h1 align="left">Will this work?</h1>
     <div class="p-3 mb-2 bg-secondary" id="demo-div">
-      <a id="start_demo" class="btn btn-lg btn-success py-1" href="#" role="button" @click="toggleDemo">Start the demo</a>
-      <p style="margin-top:1rem;">Num. of datapoints: <span class="badge badge-warning" id="num-observed-events">{{ numObservedEvents }}</span></p>
+      <button class="btn btn-lg btn-success py-1" @click="toggleDemo">{{ isRunning ? 'Stop demo' : 'Start the demo' }}</button>
+      <p style="margin-top:1rem;">Num. of datapoints: <span class="badge badge-warning">{{ numObservedEvents }}</span></p>
       <h4 style="margin-top:0.75rem;">Orientation</h4>
       <ul>
         <li>X-axis (&beta;): <span>{{ orientation.beta }}</span><span>&deg;</span></li>
@@ -64,31 +64,25 @@ export default {
   },
   methods: {
     handleOrientation(event) {
-      this.updateFieldIfNotNull('orientation.alpha', event.alpha);
-      this.updateFieldIfNotNull('orientation.beta', event.beta);
-      this.updateFieldIfNotNull('orientation.gamma', event.gamma);
+      this.orientation.alpha = event.alpha ? event.alpha.toFixed(2) : 0;
+      this.orientation.beta = event.beta ? event.beta.toFixed(2) : 0;
+      this.orientation.gamma = event.gamma ? event.gamma.toFixed(2) : 0;
       this.incrementEventCount();
     },
     handleMotion(event) {
-      this.updateFieldIfNotNull('accelerometerIncludingGravity.x', event.accelerationIncludingGravity.x);
-      this.updateFieldIfNotNull('accelerometerIncludingGravity.y', event.accelerationIncludingGravity.y);
-      this.updateFieldIfNotNull('accelerometerIncludingGravity.z', event.accelerationIncludingGravity.z);
+      this.accelerometerIncludingGravity.x = event.accelerationIncludingGravity.x ? event.accelerationIncludingGravity.x.toFixed(2) : 0;
+      this.accelerometerIncludingGravity.y = event.accelerationIncludingGravity.y ? event.accelerationIncludingGravity.y.toFixed(2) : 0;
+      this.accelerometerIncludingGravity.z = event.accelerationIncludingGravity.z ? event.accelerationIncludingGravity.z.toFixed(2) : 0;
 
-      this.updateFieldIfNotNull('accelerometer.x', event.acceleration.x);
-      this.updateFieldIfNotNull('accelerometer.y', event.acceleration.y);
-      this.updateFieldIfNotNull('accelerometer.z', event.acceleration.z);
+      this.accelerometer.x = event.acceleration.x ? event.acceleration.x.toFixed(2) : 0;
+      this.accelerometer.y = event.acceleration.y ? event.acceleration.y.toFixed(2) : 0;
+      this.accelerometer.z = event.acceleration.z ? event.acceleration.z.toFixed(2) : 0;
+      this.accelerometer.interval = event.interval ? event.interval.toFixed(2) : 0;
 
-      this.updateFieldIfNotNull('accelerometer.interval', event.interval, 2);
-
-      this.updateFieldIfNotNull('gyroscope.alpha', event.rotationRate.alpha);
-      this.updateFieldIfNotNull('gyroscope.beta', event.rotationRate.beta);
-      this.updateFieldIfNotNull('gyroscope.gamma', event.rotationRate.gamma);
+      this.gyroscope.alpha = event.rotationRate.alpha ? event.rotationRate.alpha.toFixed(2) : 0;
+      this.gyroscope.beta = event.rotationRate.beta ? event.rotationRate.beta.toFixed(2) : 0;
+      this.gyroscope.gamma = event.rotationRate.gamma ? event.rotationRate.gamma.toFixed(2) : 0;
       this.incrementEventCount();
-    },
-    updateFieldIfNotNull(fieldName, value, precision = 10) {
-      if (value != null) {
-        this[fieldName] = value.toFixed(precision);
-      }
     },
     incrementEventCount() {
       this.numObservedEvents += 1;
@@ -98,24 +92,28 @@ export default {
 
       // Request permission for iOS 13+ devices
       if (DeviceMotionEvent && typeof DeviceMotionEvent.requestPermission === "function") {
-        DeviceMotionEvent.requestPermission();
+        DeviceMotionEvent.requestPermission().then(response => {
+          if (response === 'granted') {
+            this.setupEventListeners();
+          }
+        }).catch(console.error);
+      } else {
+        this.setupEventListeners();
       }
 
       if (this.isRunning) {
         window.removeEventListener("devicemotion", this.handleMotion);
         window.removeEventListener("deviceorientation", this.handleOrientation);
-        e.target.innerHTML = "Start demo";
-        e.target.classList.add('btn-success');
-        e.target.classList.remove('btn-danger');
         this.isRunning = false;
       } else {
         window.addEventListener("devicemotion", this.handleMotion);
         window.addEventListener("deviceorientation", this.handleOrientation);
-        e.target.innerHTML = "Stop demo";
-        e.target.classList.remove('btn-success');
-        e.target.classList.add('btn-danger');
         this.isRunning = true;
       }
+    },
+    setupEventListeners() {
+      window.addEventListener("devicemotion", this.handleMotion);
+      window.addEventListener("deviceorientation", this.handleOrientation);
     }
   }
 };
